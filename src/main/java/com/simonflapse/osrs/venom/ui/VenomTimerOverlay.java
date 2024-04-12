@@ -8,36 +8,98 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.util.ColorUtil;
 
 import java.awt.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class VenomTimerOverlay extends Overlay {
 
-    private Actor actor;
-    private int venomDamage;
+    private final Actor actor;
+    private final ActorOverlayRemover overlayRemover;
+    private final AtomicBoolean activated = new AtomicBoolean(false);
 
-    public void updateVenom(Actor actor, int venomDamage) {
+    private Instant lastHit;
+    private int totalDamage = 0;
+    private int nextDamage;
+
+    public VenomTimerOverlay(Actor actor, ActorOverlayRemover overlayRemover) {
         this.actor = actor;
-        this.venomDamage = venomDamage;
+        this.overlayRemover = overlayRemover;
+    }
+
+    public void updateVenom(int damage) {
+        this.totalDamage += damage;
+        this.nextDamage = getNextVenomDamage(damage);
+        lastHit = Instant.now();
+        activated.set(true);
+    }
+
+    private int getNextVenomDamage(int currentDamage) {
+        return Math.min(currentDamage + 2, 20);
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        if (actor == null || venomDamage == 0) {
+        if (!activated.get()) {
             return null;
         }
 
+        if (!renderActorOverlay(graphics)) {
+            overlayRemover.removeActorOverlay(this.actor, this);
+        }
+        return null;
+    }
+
+    private boolean renderActorOverlay(Graphics2D graphics) {
+        long timeToNextVenom = timeDifference();
+
+        if (!isActorOverlayRelevant(timeToNextVenom)) {
+            return false;
+        }
+
+        drawText(graphics, timeToNextVenom);
+        return true;
+    }
+
+    private void drawText(Graphics2D graphics, long timeToNextVenom) {
+        int yOffset = 0;
+
+        Color lightVenomColor = new Color(73,151,126);
+        Color darkVenomColor = new Color(22,48,40).brighter().brighter();
+
+        yOffset = drawSingleLineText(new StringGraphics("Total damage: " + totalDamage, darkVenomColor), graphics, yOffset);
+        yOffset = drawSingleLineText(new StringGraphics("Next damage: " + nextDamage, darkVenomColor), graphics, yOffset);
+        drawSingleLineText(new StringGraphics("Venom in: " + timeToNextVenom + "s", lightVenomColor), graphics, yOffset);
+    }
+
+    private boolean isActorOverlayRelevant(long timeToNextVenom) {
+        if (actor == null || actor.isDead()) {
+            return false;
+        }
+
+        return timeToNextVenom >= 0;
+    }
+
+    private int drawSingleLineText(StringGraphics stringGraphic, Graphics2D graphics, int yOffset) {
         ArrayList<StringGraphics> stringGraphics = new ArrayList<>();
+        stringGraphics.add(stringGraphic);
+        println(stringGraphics, graphics, yOffset);
 
-        stringGraphics.add(new StringGraphics("Venom damage ", ColorUtil.fromHex("#49977e")));
-        stringGraphics.add(new StringGraphics("" + this.venomDamage, ColorUtil.fromHex("#163028")));
+        return yOffset + 15;
+    }
 
+    private void println(ArrayList<StringGraphics> stringGraphics, Graphics2D graphics, int yOffset) {
         Point textLocation = actor.getCanvasTextLocation(graphics, getUnformattedString(stringGraphics), actor.getLogicalHeight() + 100);
         if (textLocation != null)
         {
+            textLocation = new Point(textLocation.getX(), textLocation.getY() + yOffset);
             renderTextLocation(graphics, textLocation, stringGraphics);
         }
+    }
 
-        return null;
+    private long timeDifference() {
+        return Duration.between(Instant.now(), lastHit.plus(Duration.ofSeconds(18))).getSeconds();
     }
 
     private static String getUnformattedString(ArrayList<StringGraphics> texts) {
@@ -57,13 +119,19 @@ public class VenomTimerOverlay extends Overlay {
                 return;
             }
 
-            graphics.setColor(Color.BLACK);
-            graphics.drawString(text.getString(), x + 1, y + 1);
+            renderTextShadow(graphics, x, y, text.getString());
 
             graphics.setColor(ColorUtil.colorWithAlpha(text.getColor(), 0xFF));
             graphics.drawString(text.getString(), x, y);
-
             x += text.width(graphics);
         }
+    }
+
+    private static void renderTextShadow(Graphics2D graphics, int x, int y, String text) {
+        graphics.setColor(Color.BLACK);
+        graphics.drawString(text, x + 1, y + 1);
+
+        graphics.setColor(ColorUtil.colorWithAlpha(Color.BLACK,  50));
+        graphics.drawString(text, x + 2, y + 2);
     }
 }
