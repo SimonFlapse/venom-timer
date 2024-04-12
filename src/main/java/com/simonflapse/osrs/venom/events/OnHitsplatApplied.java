@@ -28,7 +28,7 @@ public class OnHitsplatApplied {
             return;
         }
 
-        if (hitsplat.getHitsplatType() == HitsplatID.VENOM) {
+        if (hitsplat.getHitsplatType() != HitsplatID.VENOM) {
             return;
         }
 

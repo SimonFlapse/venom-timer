@@ -1,9 +1,13 @@
 package com.simonflapse.osrs.venom.ui;
 
 import com.google.common.base.Strings;
+import com.simonflapse.osrs.venom.VenomTimerConfig;
 import com.simonflapse.osrs.venom.ui.utils.StringGraphics;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
+import net.runelite.api.NPC;
 import net.runelite.api.Point;
+import net.runelite.client.game.NPCManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.util.ColorUtil;
 
@@ -13,8 +17,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Slf4j
 public class VenomTimerOverlay extends Overlay {
 
+    private final VenomTimerConfig config;
+    private final NPCManager npcManager;
     private final Actor actor;
     private final ActorOverlayRemover overlayRemover;
     private final AtomicBoolean activated = new AtomicBoolean(false);
@@ -22,8 +29,11 @@ public class VenomTimerOverlay extends Overlay {
     private Instant lastHit;
     private int totalDamage = 0;
     private int nextDamage;
+    private int currentHealth = -1;
 
-    public VenomTimerOverlay(Actor actor, ActorOverlayRemover overlayRemover) {
+    public VenomTimerOverlay(VenomTimerConfig config, NPCManager npcManager, Actor actor, ActorOverlayRemover overlayRemover) {
+        this.config = config;
+        this.npcManager = npcManager;
         this.actor = actor;
         this.overlayRemover = overlayRemover;
     }
@@ -53,16 +63,65 @@ public class VenomTimerOverlay extends Overlay {
 
     private boolean renderActorOverlay(Graphics2D graphics) {
         long timeToNextVenom = timeDifference();
+        long timeToDead = calculateTimeToDeath(timeToNextVenom);
+
 
         if (!isActorOverlayRelevant(timeToNextVenom)) {
             return false;
         }
 
-        drawText(graphics, timeToNextVenom);
+        if (timeToNextVenom <= 0) {
+            return true;
+        }
+
+        drawText(graphics, timeToNextVenom, timeToDead);
         return true;
     }
 
-    private void drawText(Graphics2D graphics, long timeToNextVenom) {
+    private long calculateTimeToDeath(long timeToNextVenom) {
+        if (!config.timeToDeathEnabled()) {
+            this.currentHealth = -1;
+            return -1;
+        }
+
+        if (this.actor instanceof NPC) {
+            NPC npc = (NPC) this.actor;
+            Integer npcManagerHealth = npcManager.getHealth(npc.getId());
+            if (npcManagerHealth != null) {
+                updateCurrentHealth(npcManagerHealth);
+
+                return getTimeToDeath(timeToNextVenom, this.currentHealth);
+            }
+        }
+        return -1;
+    }
+
+    private void updateCurrentHealth(Integer npcManagerHealth) {
+        int currentHealth = getCurrentHealth(npcManagerHealth, actor.getHealthRatio(), actor.getHealthScale());
+        if (currentHealth == -1) {
+            currentHealth = this.currentHealth;
+        }
+
+        if (currentHealth != this.currentHealth) {
+            this.currentHealth = currentHealth;
+            log.debug("Current health updated to: {} for NPC: {}", currentHealth, this.actor.getName());
+        }
+    }
+
+    private long getTimeToDeath(long timeToNextVenom, int currentHealth) {
+        int nextDamage = this.nextDamage;
+        int healthLeft = currentHealth - nextDamage;
+        int iterator = 0;
+        while(healthLeft > 0) {
+            iterator++;
+            nextDamage = getNextVenomDamage(nextDamage);
+            healthLeft -= nextDamage;
+        }
+
+        return timeToNextVenom + (18L * iterator);
+    }
+
+    private void drawText(Graphics2D graphics, long timeToNextVenom, long timeToDeath) {
         int yOffset = 0;
 
         Color lightVenomColor = new Color(73,151,126);
@@ -70,7 +129,11 @@ public class VenomTimerOverlay extends Overlay {
 
         yOffset = drawSingleLineText(new StringGraphics("Total damage: " + totalDamage, darkVenomColor), graphics, yOffset);
         yOffset = drawSingleLineText(new StringGraphics("Next damage: " + nextDamage, darkVenomColor), graphics, yOffset);
-        drawSingleLineText(new StringGraphics("Venom in: " + timeToNextVenom + "s", lightVenomColor), graphics, yOffset);
+        yOffset = drawSingleLineText(new StringGraphics("Venom in: " + timeToNextVenom + "s", lightVenomColor), graphics, yOffset);
+
+        if (timeToDeath > 0) {
+            drawSingleLineText(new StringGraphics("Dead in: " + timeToDeath + "s", lightVenomColor), graphics, yOffset);
+        }
     }
 
     private boolean isActorOverlayRelevant(long timeToNextVenom) {
@@ -78,7 +141,7 @@ public class VenomTimerOverlay extends Overlay {
             return false;
         }
 
-        return timeToNextVenom >= 0;
+        return timeToNextVenom > -9;
     }
 
     private int drawSingleLineText(StringGraphics stringGraphic, Graphics2D graphics, int yOffset) {
@@ -99,7 +162,7 @@ public class VenomTimerOverlay extends Overlay {
     }
 
     private long timeDifference() {
-        return Duration.between(Instant.now(), lastHit.plus(Duration.ofSeconds(18))).getSeconds();
+        return Duration.between(Instant.now(), lastHit.plus(Duration.ofSeconds(18))).getSeconds() + 1;
     }
 
     private static String getUnformattedString(ArrayList<StringGraphics> texts) {
@@ -133,5 +196,37 @@ public class VenomTimerOverlay extends Overlay {
 
         graphics.setColor(ColorUtil.colorWithAlpha(Color.BLACK,  50));
         graphics.drawString(text, x + 2, y + 2);
+    }
+
+    private int getCurrentHealth(int lastMaxHealth, int lastRatio, int lastHealthScale) {
+        if (lastRatio >= 0 && lastHealthScale > 0) {
+            // This is the reverse of the calculation of healthRatio done by the server
+            // which is: healthRatio = 1 + (healthScale - 1) * health / maxHealth (if health > 0, 0 otherwise)
+            // It's able to recover the exact health if maxHealth <= healthScale.
+            int health = 0;
+            if (lastRatio > 0) {
+                int minHealth = 1;
+                int maxHealth;
+                if (lastHealthScale > 1) {
+                    if (lastRatio > 1) {
+                        // This doesn't apply if healthRatio = 1, because of the special case in the server calculation that
+                        // health = 0 forces healthRatio = 0 instead of the expected healthRatio = 1
+                        minHealth = (lastMaxHealth * (lastRatio - 1) + lastHealthScale - 2) / (lastHealthScale - 1);
+                    }
+                    maxHealth = (lastMaxHealth * lastRatio - 1) / (lastHealthScale - 1);
+                    if (maxHealth > lastMaxHealth) {
+                        maxHealth = lastMaxHealth;
+                    }
+                } else {
+                    // If healthScale is 1, healthRatio will always be 1 unless health = 0
+                    // so we know nothing about the upper limit except that it can't be higher than maxHealth
+                    maxHealth = lastMaxHealth;
+                }
+                // Take the average of min and max possible healths
+                health = (minHealth + maxHealth + 1) / 2;
+                return health;
+            }
+        }
+        return -1;
     }
 }
