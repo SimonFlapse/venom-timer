@@ -114,11 +114,11 @@ class VenomDamageTest {
 
         @Test
         void should_return_correct_time_even_if_healthScale_and_healthRation_information_is_lost() {
-            mockActorHealth(20, 30, 30);
+            mockActorHealth(30, 30, 30);
             venomDamage.updateVenom(6);
             venomDamage.calculateTimeToDeath(5);
 
-            mockActorHealth(20, -1, -1);
+            mockActorHealth(30, -1, -1);
             long timeToDeath = venomDamage.calculateTimeToDeath(5);
             assertEquals(5, timeToDeath % 18);
             assertEquals(41, timeToDeath);

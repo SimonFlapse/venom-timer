@@ -85,10 +85,6 @@ class OnHitsplatAppliedTest {
         }
     }
 
-    private static HitsplatApplied getHitsplatApplied(int damage) {
-        return getHitsplatApplied(damage, mock(Actor.class));
-    }
-
     private static HitsplatApplied getHitsplatApplied(int damage, Actor actor) {
         return getHitsplatApplied(HitsplatID.VENOM, damage, actor);
     }

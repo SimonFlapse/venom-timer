@@ -11,7 +11,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.client.game.NPCManager;
 import net.runelite.client.ui.overlay.OverlayManager;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,31 +29,28 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.STRICT_STUBS)
 class VenomTimerPluginTest {
     @InjectMocks
-    VenomTimerPlugin plugin = new VenomTimerPlugin();
+    final VenomTimerPlugin plugin = new VenomTimerPlugin();
 
     @Spy
-    VenomTimerConfig config = new VenomTimerConfig() {
+    final VenomTimerConfig config = new VenomTimerConfig() {
         @Override
         public boolean timeToDeathEnabled() {
             return true;
         }
     };
 
-    OverlayManager overlayManager = mock(OverlayManager.class);
+    final OverlayManager overlayManager = mock(OverlayManager.class);
 
-    NPCManager npcManager = mock(NPCManager.class);
-
-    @Spy
-    private OverlayOrchestrator overlayOrchestrator = new OverlayOrchestrator(overlayManager, config, npcManager);
+    final NPCManager npcManager = mock(NPCManager.class);
 
     @Spy
-    private OnConfigChanged onConfigChanged = new OnConfigChanged(overlayOrchestrator);
+    final OverlayOrchestrator overlayOrchestrator = new OverlayOrchestrator(overlayManager, config, npcManager);
 
     @Spy
-    private OnHitsplatApplied onHitsplatApplied = new OnHitsplatApplied(config, overlayOrchestrator);
+    final OnConfigChanged onConfigChanged = new OnConfigChanged(overlayOrchestrator);
 
-    @BeforeEach
-    void setUp() {}
+    @Spy
+    final OnHitsplatApplied onHitsplatApplied = new OnHitsplatApplied(config, overlayOrchestrator);
 
     @Nested
     class onHitsplatApplied {
