@@ -30,16 +30,21 @@ public class OverlayOrchestrator {
     public void updateDamage(Actor actor, int damage) {
         VenomTimerOverlay actorOverlay = activeOverlays.get(actor);
         if (actorOverlay == null) {
-            actorOverlay = new VenomTimerOverlay(config, npcManager, actor, this::removeActorOverlay);
-            overlayManager.add(actorOverlay);
-            activeOverlays.put(actor, actorOverlay);
+            actorOverlay = initializeNewOverlay(actor);
         }
 
         actorOverlay.updateVenom(damage);
     }
 
+    private VenomTimerOverlay initializeNewOverlay(Actor actor) {
+        VenomTimerOverlay actorOverlay = new VenomTimerOverlay(config, npcManager, actor, this::removeActorOverlay);
+        overlayManager.add(actorOverlay);
+        activeOverlays.put(actor, actorOverlay);
+        return actorOverlay;
+    }
+
     private void removeActorOverlay(Actor actor, Overlay overlay) {
-        log.debug("Overlay associated with: {} will be removed", actor instanceof NPC ? actor.getName() + "#" + ((NPC) actor).getIndex() : actor.getName());
+        log.debug("Overlay associated with: {} will be removed", getActorName(actor));
         activeOverlays.remove(actor);
         overlayManager.remove(overlay);
     }
@@ -48,5 +53,13 @@ public class OverlayOrchestrator {
         for (Overlay overlay : activeOverlays.values()) {
             overlayManager.remove(overlay);
         }
+    }
+
+    private static String getActorName(Actor actor) {
+        String name = actor.getName();
+        if (actor instanceof NPC) {
+            name += "#" + ((NPC) actor).getId();
+        }
+        return name;
     }
 }
