@@ -1,12 +1,12 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Start RuneLite (Debug Mode)" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="com.simonflapse.osrs.venom.VenomTimerPluginTest" />
+    <option name="MAIN_CLASS_NAME" value="com.simonflapse.osrs.venom.StartRunelite" />
     <module name="Venom_Timer_Plugin.test" />
     <option name="PROGRAM_PARAMETERS" value="--developer-mode --debug" />
     <option name="VM_PARAMETERS" value="-ea" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="com.simonflapse.osrs.venom.*" />
+        <option name="PATTERN" value="com.simonflapse.osrs.venom.events.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
