@@ -24,9 +24,6 @@ public class OnHitsplatApplied {
             return;
         }
 
-        System.out.println(hitsplatApplied.getActor().getName() + " Health ratio: " + hitsplatApplied.getActor().getHealthRatio());
-        System.out.println(hitsplatApplied.getActor().getName() + " Health Scale: " + hitsplatApplied.getActor().getHealthScale());
-
         updateVenomDamage(hitsplatApplied);
     }
 

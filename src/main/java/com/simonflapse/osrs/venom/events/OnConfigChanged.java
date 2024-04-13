@@ -14,10 +14,16 @@ import java.util.function.Consumer;
 public class OnConfigChanged {
     private final Map<String, Consumer<String>> configurationConsumers = new HashMap<>();
 
-    @Inject
-    private OverlayOrchestrator overlayOrchestrator;
+    private final OverlayOrchestrator overlayOrchestrator;
 
-    public OnConfigChanged() {
+    @Inject
+    public OnConfigChanged(OverlayOrchestrator overlayOrchestrator) {
+        initializeConsumersMap();
+
+        this.overlayOrchestrator = overlayOrchestrator;
+    }
+
+    private void initializeConsumersMap() {
         configurationConsumers.put(VenomTimerConfig.OVERLAY_ENABLED, this::overlayConfigChanged);
     }
 
