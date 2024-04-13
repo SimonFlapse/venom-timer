@@ -11,13 +11,14 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
+def lombokVersion = '1.18.30' // Must match the verified version in runelite/plugin-hub
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
 
 	// Lombok dependencies
-	compileOnly 'org.projectlombok:lombok:1.+'
-	annotationProcessor 'org.projectlombok:lombok:1.+'
+	compileOnly group: 'org.projectlombok', name:'lombok', version: lombokVersion
+	annotationProcessor group: 'org.projectlombok', name:'lombok', version: lombokVersion
 	
 	// Test dependencies
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.+'
@@ -27,8 +28,8 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:3.+"
 	testImplementation "org.mockito:mockito-junit-jupiter:5+"
 
-	testCompileOnly 'org.projectlombok:lombok:1.+'
-	testAnnotationProcessor 'org.projectlombok:lombok:1.+'
+	testCompileOnly group: 'org.projectlombok', name:'lombok', version: lombokVersion
+	testAnnotationProcessor group: 'org.projectlombok', name:'lombok', version: lombokVersion
 
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
