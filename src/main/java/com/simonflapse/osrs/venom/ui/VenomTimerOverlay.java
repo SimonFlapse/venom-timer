@@ -76,9 +76,17 @@ public class VenomTimerOverlay extends Overlay {
         Color lightVenomColor = new Color(73,151,126);
         Color darkVenomColor = new Color(22,48,40).brighter().brighter();
 
-        yOffset = drawSingleLineText(new StringGraphics("Total damage: " + this.venomDamage.getTotalDamage(), darkVenomColor), graphics, yOffset);
-        yOffset = drawSingleLineText(new StringGraphics("Next damage: " + this.venomDamage.getNextDamage(), darkVenomColor), graphics, yOffset);
-        yOffset = drawSingleLineText(new StringGraphics("Venom in: " + timeToNextVenom + "s", lightVenomColor), graphics, yOffset);
+        if (config.totalDamageEnabled()) {
+            yOffset = drawSingleLineText(new StringGraphics("Total damage: " + this.venomDamage.getTotalDamage(), darkVenomColor), graphics, yOffset);
+        }
+
+        if (config.nextDamageEnabled()) {
+            yOffset = drawSingleLineText(new StringGraphics("Next damage: " + this.venomDamage.getNextDamage(), darkVenomColor), graphics, yOffset);
+        }
+
+        if (config.timeToNextVenomEnabled()) {
+            yOffset = drawSingleLineText(new StringGraphics("Venom in: " + timeToNextVenom + "s", lightVenomColor), graphics, yOffset);
+        }
 
         if (timeToDeath > 0) {
             drawSingleLineText(new StringGraphics("Dead in: " + timeToDeath + "s", lightVenomColor), graphics, yOffset);
