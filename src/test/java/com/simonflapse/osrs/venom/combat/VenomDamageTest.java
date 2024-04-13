@@ -13,6 +13,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -66,14 +67,15 @@ class VenomDamageTest {
     class timeDifference {
         @Test
         void should_return_5_when_14_seconds_have_elapsed_since_updateVenom() {
-            venomDamage.updateVenom(6);
-
+            Clock fixedClock = Clock.fixed(Instant.EPOCH, Clock.systemUTC().getZone());
             Duration duration = Duration.ofSeconds(14);
-            Instant instant = Instant.now();
-            instant = instant.plus(duration);
+            Instant instantZeroSeconds = Instant.now(fixedClock);
+            Instant instant14Seconds = instantZeroSeconds.plus(duration);
 
             try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class, Mockito.CALLS_REAL_METHODS)) {
-                mockedStatic.when(Instant::now).thenReturn(instant);
+                mockedStatic.when(Instant::now).thenReturn(instantZeroSeconds);
+                venomDamage.updateVenom(6);
+                mockedStatic.when(Instant::now).thenReturn(instant14Seconds);
                 long timeDifference = venomDamage.timeDifference();
                 assertEquals(5, timeDifference);
             }
