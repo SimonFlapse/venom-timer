@@ -38,10 +38,6 @@ public class VenomTimerOverlay extends Overlay {
         this.venomDamage.updateVenom(damage);
     }
 
-    private int getNextVenomDamage(int currentDamage) {
-        return Math.min(currentDamage + 2, 20);
-    }
-
     @Override
     public Dimension render(Graphics2D graphics) {
         if (venomDamage == null) {

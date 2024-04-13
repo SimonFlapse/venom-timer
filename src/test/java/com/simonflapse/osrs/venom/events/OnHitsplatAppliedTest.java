@@ -23,11 +23,9 @@ class OnHitsplatAppliedTest {
 
     @BeforeEach
     void setUp() {
-        config = mock(VenomTimerConfig.class);
+        config = new VenomTimerConfig() {};
         overlayOrchestrator = mock(OverlayOrchestrator.class);
         onHitsplatApplied = new OnHitsplatApplied(config, overlayOrchestrator);
-
-        when(config.overlayEnabled()).thenReturn(true);
     }
 
     @Nested
@@ -73,7 +71,13 @@ class OnHitsplatAppliedTest {
 
         @Test
         void should_not_update_damage_if_overlay_disabled() {
-            when(config.overlayEnabled()).thenReturn(false);
+            config = new VenomTimerConfig() {
+                @Override
+                public boolean overlayEnabled() {
+                    return false;
+                }
+            };
+            onHitsplatApplied = new OnHitsplatApplied(config, overlayOrchestrator);
             HitsplatApplied hitsplatApplied = new HitsplatApplied();
 
             onHitsplatApplied.onEvent(hitsplatApplied);
