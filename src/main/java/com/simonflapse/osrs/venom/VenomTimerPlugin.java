@@ -16,7 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Venom Timer"
+		name = "Venom Timer",
+		description = "Visual indication of venom damage",
+		tags = {"combat, venom"}
 )
 public class VenomTimerPlugin extends Plugin {
 	@Inject
