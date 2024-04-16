@@ -5,9 +5,11 @@ import com.simonflapse.osrs.venom.events.OnConfigChanged;
 import com.simonflapse.osrs.venom.events.OnHitsplatApplied;
 import com.simonflapse.osrs.venom.ui.OverlayOrchestrator;
 import com.simonflapse.osrs.venom.ui.VenomTimerOverlay;
+import com.simonflapse.osrs.venom.ui.utils.GraphicsUtil;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.HitsplatID;
 import net.runelite.api.NPC;
+import net.runelite.api.Point;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.client.game.NPCManager;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -70,7 +72,13 @@ class VenomTimerPluginTest {
             verify(overlayManager).add(argumentCaptor.capture());
 
             VenomTimerOverlay overlay = argumentCaptor.getValue();
-            overlay.render(mock(Graphics2D.class));
+
+            Graphics2D graphics2D = GraphicsUtil.getSpyGraphics2D();
+
+            when(npc.getCanvasTextLocation(eq(graphics2D), anyString(), anyInt()))
+                    .thenAnswer((invocation) -> new Point(0, invocation.getArgument(2)));
+
+            overlay.render(graphics2D);
         }
     }
 }
