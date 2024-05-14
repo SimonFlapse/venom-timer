@@ -53,6 +53,7 @@ public class OverlayOrchestrator {
         for (Overlay overlay : activeOverlays.values()) {
             overlayManager.remove(overlay);
         }
+        activeOverlays.clear();
     }
 
     private static String getActorName(Actor actor) {
